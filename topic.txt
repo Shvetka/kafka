@@ -1,0 +1,1 @@
+kafka-topics.sh --create --topic sensor_data --bootstrap-server localhost:9092 --partitions 3 --replication-factor 3
