@@ -1,5 +1,5 @@
 import json
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, KafkaError, TopicPartition
 
 
 # Настройка консьюмера – адрес сервера
@@ -21,18 +21,17 @@ consumer.subscribe(["sensor_data"])
 # Чтение сообщений в бесконечном цикле
 try:
     while True:
-        # Получение сообщений
-        msg = consumer.poll(0.2)
-
-        if msg is None:
-            continue
-        if msg.error():
-            print(f"Ошибка: {msg.error()}")
-            continue
-
-        value = msg.value().decode("utf-8")
-        consumer.commit(asynchronous=False)
-        print(f"Получено сообщение: {value=}, offset={msg.offset()}")
+        msgs = consumer.consume(num_messages=10, timeout=1.0)
+        for msg in msgs:
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    # End of partition event
+                    continue
+                else:
+                    print(msg.error())
+            else:
+                print('Received message: {}'.format(msg.value().decode('utf-8')))
+                consumer.commit(asynchronous=False)
 finally:
     # Закрытие консьюмера
     consumer.close() 
